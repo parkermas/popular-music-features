@@ -1,0 +1,208 @@
+---
+title: "models_graphics"
+author: "Parker Mas"
+date: "11/19/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(readr)
+library(broom)
+library(coefplot)
+library(readr)
+
+```
+
+```{r}
+
+combined <- read_rds("raw-data/combined.rds")
+
+grouping1 <- combined %>% 
+  group_by(not_hot100) %>%
+  filter(!duplicated(id))
+
+grouping1$date_year <- format(as.Date(grouping1$album_date, format="%d/%m/%Y"),"%Y")
+
+grouping1$date_year <- as.double(grouping1$date_year)
+
+grouping1 <- grouping1 %>% 
+  mutate(decade = floor_decade(date_year))
+
+grouping2 <- combined %>%
+  filter(not_hot100 == "FALSE") %>%
+  filter(!duplicated(id))
+
+grouping2$date_year <- format(as.Date(grouping2$date, format="%d/%m/%Y"),"%Y")
+
+grouping2$date_year <- as.double(grouping2$date_year)
+
+floor_decade <- function(value){ return(value - value %% 10) }
+  
+grouping2 <- grouping2 %>% 
+  mutate(decade = floor_decade(date_year))
+
+decades <- grouping2 %>%
+  distinct(decade) %>%
+  filter(decade != "1950")
+
+write_rds(decades, "Data_Final_Project/decades.rds")
+
+write_rds(grouping1, "Data_Final_Project/grouping1.rds")
+
+write_rds(grouping2, "Data_Final_Project/grouping2.rds")
+
+
+```
+
+```{r}
+
+grouping1 %>%
+  group_by(not_hot100) %>%
+  summarize(mean_danceability = mean(danceability, na.rm = TRUE),
+            mean_tempo = mean(tempo, na.rm = TRUE),
+            mean_energy = mean(energy, na.rm = TRUE),
+            mean_acousticness = mean(acousticness, na.rm = TRUE),
+            mean_speechiness = mean(speechiness, na.rm = TRUE))
+
+```
+
+```{r}
+
+lm(`Peak Position` ~ danceability, data = grouping2)
+  
+lm(`Peak Position` ~ energy, data = grouping2)
+
+lm(`Peak Position` ~ acousticness, data = grouping2)
+
+lm(`Peak Position` ~ speechiness, data = grouping2)
+```
+
+```{r}
+
+graphic1 <- grouping1 %>% 
+  filter(decade != "1940") %>%
+  filter(decade != "1950")
+
+
+graphic1 %>%
+  group_by(not_hot100, decade) %>%
+  summarize(mean_danceability = mean(danceability, na.rm = TRUE)) %>%
+  ggplot(aes(fill = not_hot100, x = decade, y = mean_danceability)) +
+  geom_col(position = "dodge")
+
+```
+
+
+
+```{r}
+
+graphic1 <- grouping2 %>%
+  group_by(date_year) %>%
+  nest() %>%
+  mutate(models = map(data, ~ lm(`Peak Position` ~ danceability, data = .x))) %>%
+  mutate(coefficients = map(models, ~ tidy(.x))) %>%
+  unnest(coefficients)
+
+graphic1 %>% 
+  filter(term == "danceability") %>%
+  ggplot(aes(x = date_year, y = estimate)) +
+  geom_col()
+```
+
+```{r}
+
+danceability_decades <- grouping2 %>%
+  filter(decade != "1950") %>%
+  group_by(decade) %>%
+  nest() %>%
+  mutate(models = map(data, ~ lm(`Peak Position` ~ danceability, data = .x))) %>%
+  mutate(coefficients = map(models, ~ tidy(.x))) %>%
+  unnest(coefficients)
+
+danceability_decades %>% 
+  filter(term == "danceability") %>%
+  ggplot(aes(x = decade, y = estimate)) +
+  geom_col()
+
+energy_decades <- grouping2 %>%
+  filter(decade != "1950") %>%
+  group_by(decade) %>%
+  nest() %>%
+  mutate(models = map(data, ~ lm(`Peak Position` ~ energy, data = .x))) %>%
+  mutate(coefficients = map(models, ~ tidy(.x))) %>%
+  unnest(coefficients)
+
+energy_decades %>% 
+  filter(term == "energy") %>%
+  ggplot(aes(x = decade, y = estimate)) +
+  geom_col()
+
+acousticness_decades <- grouping2 %>%
+  filter(decade != "1950") %>%
+  group_by(decade) %>%
+  nest() %>%
+  mutate(models = map(data, ~ lm(`Peak Position` ~ acousticness, data = .x))) %>%
+  mutate(coefficients = map(models, ~ tidy(.x))) %>%
+  unnest(coefficients)
+
+acousticness_decades %>%
+  filter(term == "acousticness") %>%
+  ggplot(aes(x = decade, y = estimate)) + 
+  geom_col()
+
+speechiness_decades <- grouping2 %>%
+  filter(decade != "1950") %>%
+  group_by(decade) %>%
+  nest() %>%
+  mutate(models = map(data, ~ lm(`Peak Position` ~ speechiness, data = .x))) %>%
+  mutate(coefficients = map(models, ~ tidy(.x))) %>%
+  mutate(r_squared = map(models, ~ glance(.x))) %>%
+  unnest(coefficients) 
+
+speechiness_decades %>%
+  filter(term == "speechiness") %>%
+  ggplot(aes(x = decade, y = estimate)) + 
+  geom_col()
+
+valence_decades <- grouping2 %>%
+  filter(decade != "1950") %>%
+  group_by(decade) %>%
+  nest() %>%
+  mutate(models = map(data, ~ lm(`Peak Position` ~ valence, data = .x))) %>%
+  mutate(coefficients = map(models, ~ tidy(.x))) %>%
+  mutate(r_squared = map(models, ~ glance(.x))) %>%
+  unnest(coefficients) 
+
+valence_decades %>%
+  filter(term == "valence") %>%
+  ggplot(aes(x = decade, y = estimate)) + 
+  geom_col()
+
+model <- grouping2 %>%
+  filter(decade != "1950") %>%
+  group_by(decade) %>%
+  nest() %>%
+  mutate(models = map(data, ~ lm(`Peak Position` ~ danceability * energy * speechiness * valence, data = .x))) %>%
+  mutate(coefficients = map(models, ~ tidy(.x))) %>%
+  mutate(r_squared = map(models, ~ glance(.x))) %>%
+  unnest(coefficients) 
+
+
+ 
+  
+
+lm(`Peak Position` ~ danceability * energy * speechiness * valence, data = grouping2)
+
+
+model_test
+
+grouping2
+
+coefplot(model_test)
+
+```
+
+
