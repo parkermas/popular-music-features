@@ -17,14 +17,28 @@ library(plotly)
 library(readr)
 library(gt)
 
+# Loaded all the packages that I thought I would need for the Shiny app.
+# Since I planned on making several tables and a coefficient plot, coefplot
+# and gt were especially necessary.
+
 grouping1 <- read_rds("grouping1.rds")
 grouping2 <- read_rds("grouping2.rds")
 grouping3 <- read_rds("grouping3.rds")
 decades <- read_rds("decades.rds")
 
+# I read in all of my .rds files here, at the start, as I knew
+# they would all be used throughout the code in my Shiny ui and server,
+# as they have all the data being analyzed in my project.
 
-
-ui <- navbarPage(theme = shinytheme("flatly"),"Behind Billboard: Exploring the Audio Features of Popular Music",
+ui <- navbarPage(theme = shinytheme("flatly"),
+                 
+                 # Added a theme "flatly" for the Shiny app to give it some aesthetic
+                 # flair.
+                 
+                 "Behind Billboard: Exploring the Audio Features of Popular Music",
+                 
+                 # Gave my Shiny app an interesting title
+                 
                  tabPanel(
                      title = "Artist and Song Data",
                      h3("Exploring the Popularity and Audio Features of Pop Music"),
@@ -32,12 +46,20 @@ ui <- navbarPage(theme = shinytheme("flatly"),"Behind Billboard: Exploring the A
                          tabPanel(
                              h6("Artist & Song Popularity"),
                              br(),
+                             
+                             # I added both a slider panel, for the viewer to change the year, and radio buttons,
+                             # for the viewer to select what they wanted to see visualized (artist/song). I also kept the animate feature
+                             # so they they could choose to watch the animation if they so chose.
+                             
                              sidebarPanel(
                                  sliderInput("year3",
                                              "Year", min = 1960, max = 2018, value = 2018, animate = TRUE),
                                  radioButtons("artist_song",
                                               "Song/Artist", c("Song", "Artist"))
                                  
+                                 # Set my main panel to output the graphic that shows the most popular artists/songs based on
+                                 # the server code. Added text below to help contextualize the graphic and provide more detail
+                                 # for the viewer.
                              ),
                              mainPanel(
                                  plotlyOutput("popularityPlotly")
@@ -52,6 +74,11 @@ ui <- navbarPage(theme = shinytheme("flatly"),"Behind Billboard: Exploring the A
                              
                              
                          ),
+                         
+                         # Here I added a tab that will allow the viewer to select the year using a slider,
+                         # the attribute using a drop-down menu, and radio buttons to select whether they wanted to
+                         # see the artists with the highest or lowest mean features for the attribute and year.
+                         
                          tabPanel(
                              h6("Artists with Extreme Mean Features"),
                              br(),
@@ -66,8 +93,15 @@ ui <- navbarPage(theme = shinytheme("flatly"),"Behind Billboard: Exploring the A
                              ),
                              br(),
                              br(),
+                             
+                             # Set the main panel to output the gt table that I coded in the server.
+                             
                              mainPanel(
                                  gt_output("artistsGt"))),
+                         
+                         # This panel is basically the same thing as the extreme features tab for the artists, but for
+                         # individual songs instead. The same inputs are presented and the output will basically be the exact same.
+                         # More detail can be found in the server code.
                          
                          tabPanel(
                              h6("Songs with Extreme Features"),
@@ -85,6 +119,11 @@ ui <- navbarPage(theme = shinytheme("flatly"),"Behind Billboard: Exploring the A
                              mainPanel(
                                  gt_output("songsGt"))),
                          
+                         # I also wanted to have a tab where the viewer could search for say, their favorite rapper. Here
+                         # I elected to create a tab where there is a text input box. I also added a drop-down menu and radio buttons
+                         # so the viewer could choose which attribute they would like to look at and whether they wanted to see the
+                         # artist's most or least popular songs.
+                        
                          tabPanel(
                              h6("Search By Artist"),
                              br(),
@@ -99,12 +138,21 @@ ui <- navbarPage(theme = shinytheme("flatly"),"Behind Billboard: Exploring the A
                                  p("Type in the name of an artist, select a feature, and choose whether to see the artist's 10 most or least popular songs based on peak chart position.")
                              ),
                              br(),
+                             
+                             # The main panel outputs a bar graph that changes based on the input.
+                             
                              mainPanel(
                                  plotlyOutput("artistdata")),
                              br(),
                              tags$div("Note: Songs are arranged in the graph from most to least popular (left to right), both for the artist's ten most and ten least popular songs."),
                          )
                      )),
+                 
+                 # For the audio features over time panel, I could keep things a little simpler. I only had two tabs, one with
+                 # a visualization of audio features over time by year and another one by decade. By using radio buttons,
+                 # a viewer can select which attribute they would like to see visualized, and by switching the tabs, they can see
+                 # both years and decades visualized.
+                 
                  tabPanel("Audio Features Over Time",
                           h3("Visualizing Changes in Audio Features"),
                     tabsetPanel(
@@ -115,6 +163,9 @@ ui <- navbarPage(theme = shinytheme("flatly"),"Behind Billboard: Exploring the A
                         radioButtons("attribute",
                                      "Feature:", c("Danceability", "Energy", "Valence", "Speechiness"))
                                           ),
+                    
+                    # The output will be a line graph that differentiates between Hot 100 and non-Hot 100 means.
+                    
                     mainPanel(
                         plotlyOutput("chartingPlotly"))),
                     br(),
@@ -130,6 +181,9 @@ ui <- navbarPage(theme = shinytheme("flatly"),"Behind Billboard: Exploring the A
                             sidebarPanel(radioButtons("attribute5",
                                                        "Feature:", c("Danceability", "Energy", "Valence", "Speechiness"))),
                     
+                     # Here the output is a double bar graph instead of a line plot, as I thought these better represented
+                     # decades than a line graph would. The colors differentiate Hot 100 versus non-Hot 100 means.
+                            
                     mainPanel(
                         plotlyOutput("decadesPlotly"),
                         
@@ -145,6 +199,11 @@ ui <- navbarPage(theme = shinytheme("flatly"),"Behind Billboard: Exploring the A
                     
                     ))),
 
+                 # The following is the panel that has the multivariate linear regression I ran on my data. The viewer can select
+                 # from a drop-down menu which decade's worth of data they would like to see the model run on, and the resulting coefficient
+                 # plot will correspond to that decade. I also added a paragraph of extra instruction for the viewer in case it was unclear what the
+                 # drop down menu was for.
+                 
                  tabPanel(
                      title = "Predictive Model",
                      h3("What Makes a Popular Song? How Audio Features Predict Peak Chart Position"),
@@ -154,6 +213,11 @@ ui <- navbarPage(theme = shinytheme("flatly"),"Behind Billboard: Exploring the A
                                      "Decade:", c("1960", "1970", "1980", "1990", "2000", "2010")),
                          p("Select a decade from the drop-down menu to run a linear regression on the data from that decade. The plot represents the coefficients for the variables included in the model."),
                      ),
+                     
+                     # The output here is a coefficient plot created using the coefplot package. Additionally,
+                     # I added a decent amount of text below that explains exactly what the model is and some of the 
+                     # conclusions that could be drawn based on the 2010 decade model.
+                     
                      mainPanel(
                          plotlyOutput("peakPlotly")),
                      br(),
@@ -170,7 +234,11 @@ ui <- navbarPage(theme = shinytheme("flatly"),"Behind Billboard: Exploring the A
                               the negative correlation between 'Energy' and peak position (~ -5) seems to suggest that high energy songs tend to do worse than songs with a more mellow feel. Note that causality is not necessarily implied, and this is a simplistic model. All analysis does not presume causality and simply notes the interesting correlations found in the data.")
                  ),                   
                          
-                         
+                  The final panel is my About page, where I give information about what this project is generally,
+                 where I got my data and what it represents, an explaination of each of the audio features of the music that
+                 is referenced in this app. Finally, I included in about me page as per the instructions. I also figured out how how
+                 to add links to text and added links to jouralistic sources, the sources for my data, and my Github repo, as appropriate
+                        
                   tabPanel(
                       title = "About",
                       h3("About the Project"),
@@ -207,8 +275,21 @@ ui <- navbarPage(theme = shinytheme("flatly"),"Behind Billboard: Exploring the A
                   ))
                  
                      
-          
+          # Below is the code for my server. This is where most of the actual R code is actually run, 
+          # as most of the UI code has to do with specifying HOW the inputs and outputs are presented 
+          # as opposed to the code that tells the Shiny app WHAT to display.
+
+
 server <- function(input, output) {
+    
+    # The first output I created was my coefficient plot based on the model I
+    # ran for each decade. I figured out how I could use the input$decade term so
+    # that the output of my coefficient plot would correspond to whatever the viewer
+    # selected as the input. I also edited the aesthetics of the coefficient plot along
+    # the lines of what Sascha suggested and changed my linear regression to not show the interactions
+    # of the variables, as these would probably be too complicated for the average viewer and thus unhelpful.
+    # I also added an interesting title and axis titles as appropriate.
+    
     output$peakPlotly <- renderPlotly({
         group_decade <- grouping2 %>% 
             filter(decade == input$decade)
@@ -223,6 +304,11 @@ server <- function(input, output) {
         
     })
     
+    # Here is where I created the line graph that shows the changes in a given attribute based
+    # on the input year and attribute using the slider and drop down menu. Using get(input$attribute),
+    # which draws the column data rather than just using the literal text of input as the code. I had to
+    # group by Hot100 and year to get the data the way I wanted it, and I also made sure to add different
+    # colored lines for the plot as well as a title and axis titles.
     
     output$chartingPlotly <- renderPlotly({
         charting <- grouping1 %>%
@@ -240,6 +326,12 @@ server <- function(input, output) {
                  y = "Mean Value of the Selected Feature")
     })
     
+    # Instead of the line graph, which showed mean audio attributes for years,
+    # I chose here to make a bar graph that showed the mean attributes for decades.
+    # My code is fairly similar except I group by decade instead of year and I have
+    # to set the position in geom_col() to dodge to specify that I want a double
+    # bar chart (one bar for Hot 100 and one for non-Hot 100).
+    
     output$decadesPlotly <- renderPlotly({
         decades <- grouping1 %>%
             filter(date_year >= "1960") %>%
@@ -254,6 +346,16 @@ server <- function(input, output) {
             
     })
         
+    # Here, I leanred to do reactive coding within shiny using the eventReactive() command.
+    # While I still don't totally understand what it means, I understand that by putting my code
+    # within an eventReactive command and specifying which variables should be reactive, I can save that 
+    # output, which becomes a command that can be rendered as a plot. From there, I use if else commands to add
+    # another layer of reactivity in that the output will change based on multiple inputs. With this 
+    # plot, the visualization will change based on the selection of song or artist using radio buttons
+    # and year using the slider. For the sake of being able to see the text on the visualizations,
+    # I took only the top 30 artists/songs and also made sure to reorder the bars based on the order of their value,
+    # with the higher values first (on top after the coordinate flip).
+    
     output$popularityPlotly <- renderPlotly({
         popularityPlotly <- popularityPlotly_eventReactive()
     })
@@ -293,6 +395,14 @@ server <- function(input, output) {
                                                                      y = "Number of Weeks on Hot 100 Chart")
                                                         }
                                                     })
+    
+    # Here, I created another reactive table that changes based on 3 inputs and uses if and else commands.
+    # I used date$year to filter for the selected year, grouped by artist because that is the unit of analysis
+    # here, and used summarize() to get the mean attrbute based on whatever the viewer selected as their input
+    # (represnted through input$attribute2). I then arranged by either descending or ascending order and took the top 10
+    # based on what the viewer selected (either the Highest mean attribute artists or the lowest). I then selected only
+    # artist and used gt() to create a clean looking table. I also added a source note clarifying which set of data
+    # is being used to generate these tables.
     
     output$artistsGt <- render_gt({
         artistsGt <- artistsGt_eventReactive()
