@@ -20,6 +20,21 @@ library(readr)
 
 combined <- read_rds("raw-data/combined.rds")
 
+combined <- combined %>%
+  mutate(Hot100 = case_when(is.na(Performer) ~ "No",
+                            is_character(Performer) ~ "Yes"))
+
+combined$Danceability <- combined$danceability
+
+combined$Energy <- combined$energy
+
+combined$Valence <- combined$valence
+
+combined$Speechiness <- combined$speechiness
+
+combined$Duration <- combined$duration_ms
+
+
 grouping1 <- combined %>% 
   group_by(not_hot100) %>%
   filter(!duplicated(id))
@@ -28,19 +43,19 @@ grouping1$date_year <- format(as.Date(grouping1$album_date, format="%d/%m/%Y"),"
 
 grouping1$date_year <- as.double(grouping1$date_year)
 
+floor_decade <- function(value){ return(value - value %% 10) }
+
 grouping1 <- grouping1 %>% 
   mutate(decade = floor_decade(date_year))
 
 grouping2 <- combined %>%
-  filter(not_hot100 == "FALSE") %>%
+  filter(Hot100 == "Yes") %>%
   filter(!duplicated(id))
 
 grouping2$date_year <- format(as.Date(grouping2$date, format="%d/%m/%Y"),"%Y")
 
 grouping2$date_year <- as.double(grouping2$date_year)
 
-floor_decade <- function(value){ return(value - value %% 10) }
-  
 grouping2 <- grouping2 %>% 
   mutate(decade = floor_decade(date_year))
 
@@ -48,12 +63,23 @@ decades <- grouping2 %>%
   distinct(decade) %>%
   filter(decade != "1950")
 
+grouping2$song <- as.factor(grouping2$song)
+
+grouping3 <- combined %>% 
+  filter(Hot100 == "Yes")
+
+grouping3$date_year <- format(as.Date(grouping3$date, format="%d/%m/%Y"),"%Y")
+
+grouping3$date_year <- as.double(grouping3$date_year)
+
+  
 write_rds(decades, "Data_Final_Project/decades.rds")
 
 write_rds(grouping1, "Data_Final_Project/grouping1.rds")
 
 write_rds(grouping2, "Data_Final_Project/grouping2.rds")
 
+write_rds(grouping3, "Data_Final_Project/grouping3.rds")
 
 ```
 
@@ -66,6 +92,8 @@ grouping1 %>%
             mean_energy = mean(energy, na.rm = TRUE),
             mean_acousticness = mean(acousticness, na.rm = TRUE),
             mean_speechiness = mean(speechiness, na.rm = TRUE))
+
+
 
 ```
 
@@ -92,6 +120,14 @@ graphic1 %>%
   summarize(mean_danceability = mean(danceability, na.rm = TRUE)) %>%
   ggplot(aes(fill = not_hot100, x = decade, y = mean_danceability)) +
   geom_col(position = "dodge")
+
+grouping1 %>%
+  filter(decade != "1940") %>%
+            filter(decade != "1950") %>%
+            group_by(not_hot100, decade) %>%
+            summarize(mean_attribute = mean(energy, na.rm = TRUE)) %>%
+            ggplot(aes(fill = not_hot100, x = decade, y = mean_attribute)) +
+            geom_col(position = "dodge")
 
 ```
 
@@ -194,7 +230,7 @@ model <- grouping2 %>%
  
   
 
-lm(`Peak Position` ~ danceability * energy * speechiness * valence, data = grouping2)
+model_1 <- lm(`Peak Position` ~ danceability * energy * speechiness * valence, data = grouping2)
 
 
 model_test
@@ -202,6 +238,8 @@ model_test
 grouping2
 
 coefplot(model_test)
+
+summary(model_1)
 
 ```
 
