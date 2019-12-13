@@ -234,10 +234,10 @@ ui <- navbarPage(theme = shinytheme("flatly"),
                               the negative correlation between 'Energy' and peak position (~ -5) seems to suggest that high energy songs tend to do worse than songs with a more mellow feel. Note that causality is not necessarily implied, and this is a simplistic model. All analysis does not presume causality and simply notes the interesting correlations found in the data.")
                  ),                   
                          
-                  The final panel is my About page, where I give information about what this project is generally,
-                 where I got my data and what it represents, an explaination of each of the audio features of the music that
-                 is referenced in this app. Finally, I included in about me page as per the instructions. I also figured out how how
-                 to add links to text and added links to jouralistic sources, the sources for my data, and my Github repo, as appropriate
+                 #  The final panel is my About page, where I give information about what this project is generally,
+                 # where I got my data and what it represents, an explaination of each of the audio features of the music that
+                 # is referenced in this app. Finally, I included in about me page as per the instructions. I also figured out how how
+                 # to add links to text and added links to jouralistic sources, the sources for my data, and my Github repo, as appropriate.
                         
                   tabPanel(
                       title = "About",
@@ -247,6 +247,8 @@ ui <- navbarPage(theme = shinytheme("flatly"),
                                "have proven to be powerful forces driving change in the music industry, sparking increased discussion about the evolution of popular music and interest in what features make a song popular.
                                In this project, I examine audio and chart data from American popular music from the past five decades, including a number of visualizations that illuminate interesting patterns in the data as well as a predictive model analysis
                                of the variables that drive popularity of a song for each decade."),
+                      h3("Video Introduction"), 
+                      HTML('<iframe width="560" height="315" src="https://www.youtube.com/embed/v51DgFuolrw" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'),
                       h3("Data Sources"),
                       tags$div("The first set of data I used comes from Sean Miller at",
                                a(href = "https://data.world/kcmillersean/billboard-hot-100-1958-2017", "data.world,"),
@@ -272,6 +274,7 @@ ui <- navbarPage(theme = shinytheme("flatly"),
                       h3("About Me"),
                       tags$div("My name is Parker Mas and I am currently a sophomore at Harvard College studying Government with interests in American politics and data science.
                                Check out my", a(href = "https://github.com/parkermas", "Github"), "here!")
+
                   ))
                  
                      
@@ -443,6 +446,12 @@ server <- function(input, output) {
                                                 
                                              })
     
+    # I used very similar code here as compared to the table that displayed the extremes for attributes based on artist.
+    # Here, I am showing the extremes for individual songs, so I group by song. However, I still leave the
+    # artist column in before creating the table, as I know that many viewers won't know some songs, but may know something about
+    # the artist that they can use to draw a conclusion. I also added a source note explaining what data is being used for
+    # clarity.
+    
     output$songsGt <- render_gt({
         songsGt <- songsGt_eventReactive()
     })
@@ -483,6 +492,14 @@ server <- function(input, output) {
                                                }
                                            })
 
+    # For the final plot, I created a graph that changes based off of three inputs: a text
+    # box that a viewer can type an artist's name into, a drop down menu that allows them to select
+    # an attribute, and radio buttons that allow the viewer to look at the artist's most or least 
+    # popular songs. I again used eventReactive() and if and else commands to do this. I used similar code as with the
+    # tables, but here I created bar charts that show the names of the songs on the x axis and the audio attribute values
+    # for the song on the y axis. I made sure to order the songs in a logical manner (left to right is lower on the charts)
+    # and add color to the bars as well as axis titles and an overall title and subtitle for the plot.
+    
     output$artistdata <- renderPlotly({
         artistdata <- artistdata_eventReactive()
         

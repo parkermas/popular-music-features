@@ -1,0 +1,132 @@
+---
+title: "Behind Billboard"
+subtitle: "Exploring the Popularity and Audio Features of Popular Music"
+author: "Parker Mas"
+date: "12/12/2019"
+output: pdf_document
+fontsize: 11pt
+geometry: margin=1in
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(coefplot)
+library(ggpubr)
+grouping1 <- read_rds("Behind-Billboard/grouping1.rds")
+grouping2 <- read_rds("Behind-Billboard/grouping2.rds")
+grouping3 <- read_rds("Behind-Billboard/grouping3.rds")
+```
+
+## Abstract
+
+Music is changing. In recent years, both technology and culture have proven to be powerful forces driving change in the music industry, sparking increased discussion about the evolution of popular music and interest in what features make a song popular. In this project, I examine audio data from the Spotify API and Billboard chart data from American popular music from the past five decades, including a number of visualizations that illuminate interesting patterns in the data as well as a predictive model analysis of the variables that drive peak popularity of a song for each decade. In my multivariate linear regression model, I use the audio features of danceability, energy, valence, and speechiness as explanatory variables of peak song popularity for each decade, finding that danceability is consistently (in all but one decade) correlated with the strongest impact on peak chart position for a given song, while valence and energy consistently correlated with the weakest impact on chart position. The results from my model also demonstrate how different variables correlated with a rise or fall in peak chart position changed over time, with increased speechiness originally being correlated with a sharp fall in peak chart position in the 1960s to eventually being correlated with a significant rise in peak chart position by the 2010s.
+
+\newpage
+
+## What Makes a Song Popular?
+
+Music is changing. In recent years, both technology and culture have proven to be powerful forces driving change in the music industry, sparking increased discussion about the evolution of popular music and interest in what features make a song popular. Today, music listeners have never had more choice with the advent of music streaming services such as Spotify and Apple Music, and the types of music that see commercial success today are quite characteristically and stylistically different than the radio hits of fifty years ago. 
+
+Understanding what features have made songs popular over the last half century through data not only allows us to visualize the changes in popular music characteristics through over time, but also to ask questions regading the impact of certain audio features in determining a song's popularity. In this project, I ask the question, ***"What explanatory audio features predict peak chart position of a song for a given decade?"*** Do songs that sound "happy" tend to be more popular during certain decades? Is the "danceability" of a song more important than its energy in predicting whether it will be a #1 hit? In my analysis, I focus on the audio features of danceability, energy, valence, and speechiness (see below), as I felt that these were the most likely to vary in prevalence over time and yield the most accurate predictive results. 
+
+I used both data from the Spotify API, collected by Andrew Thompson at components.one, and Billboard chart data from the past fifty years from Sean Miller at data.world to conduct my analysis. In cleaning the data, I combined the two datasets in order to be able to compare Hot 100 songs included in the Billboard 200 albums with the songs that were not Hot 100 but still in the Billboard 200 albums (representing the most popular songs as opposed to many songs which were all relatively successful but not of the same popularity). I also chose to limit the dates from 1960-2018 in order to make sure I had no years with incomplete data and enough entries per decade to create an model with. 
+
+In my analysis, I find that danceability is consistently (in all but one decade) correlated with the strongest impact on peak chart position for a given song, while valence and energy consistently correlated with the weakest impact on chart position. The results from my model also demonstrate how different variables correlated with a rise or fall in peak chart position changed over time, with increased speechiness originally being correlated with a sharp fall in peak chart position in the 1960s to eventually being correlated with a significant rise in peak chart position by the 2010s.
+
+## Audio Features 
+
+Danceability - describes how suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most danceable.
+
+Energy - Energy is a measure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity. Typically, energetic tracks feel fast, loud, and noisy. For example, death metal has high energy, while a Bach prelude scores low on the scale. Perceptual features contributing to this attribute include dynamic range, perceived loudness, timbre, onset rate, and general entropy.
+
+Valence - A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).
+
+Speechiness - Speechiness detects the presence of spoken words in a track. The more exclusively speech-like the recording (e.g. talk show, audio book, poetry), the closer to 1.0 the attribute value. Values above 0.66 describe tracks that are probably made entirely of spoken words. Values between 0.33 and 0.66 describe tracks that may contain both music and speech, either in sections or layered, including such cases as rap music. Values below 0.33 most likely represent music and other non-speech-like tracks.
+
+**Figure 1: Changes in Audio Features Over Time by Year, 1960-2018**
+
+```{r figure 1, messsage = FALSE, warning=FALSE}
+
+danceability <- grouping1 %>%
+  filter(date_year >= "1960") %>%
+  filter(date_year < "2019") %>%
+  group_by(Hot100, date_year) %>%
+  summarize(mean_attribute = mean(danceability), na.rm = TRUE) %>%
+  ungroup() %>%
+  ggplot(aes(group = Hot100, x = date_year, y = mean_attribute)) +
+  geom_line(aes(color = Hot100)) +
+  geom_point(aes(color = Hot100)) +
+  labs(x = "Year",
+      y = "Mean Value of Danceability")
+
+energy <- grouping1 %>%
+  filter(date_year >= "1960") %>%
+  filter(date_year < "2019") %>%
+  group_by(Hot100, date_year) %>%
+  summarize(mean_attribute = mean(energy), na.rm = TRUE) %>%
+  ungroup() %>%
+  ggplot(aes(group = Hot100, x = date_year, y = mean_attribute)) +
+  geom_line(aes(color = Hot100)) +
+  geom_point(aes(color = Hot100)) +
+  labs(x = "Year",
+      y = "Mean Value of Energy")
+
+valence <- grouping1 %>%
+  filter(date_year >= "1960") %>%
+  filter(date_year < "2019") %>%
+  group_by(Hot100, date_year) %>%
+  summarize(mean_attribute = mean(valence), na.rm = TRUE) %>%
+  ungroup() %>%
+  ggplot(aes(group = Hot100, x = date_year, y = mean_attribute)) +
+  geom_line(aes(color = Hot100)) +
+  geom_point(aes(color = Hot100)) +
+  labs(x = "Year",
+      y = "Mean Value of Valence")
+
+speechiness <- grouping1 %>%
+  filter(date_year >= "1960") %>%
+  filter(date_year < "2019") %>%
+  group_by(Hot100, date_year) %>%
+  summarize(mean_attribute = mean(speechiness), na.rm = TRUE) %>%
+  ungroup() %>%
+  ggplot(aes(group = Hot100, x = date_year, y = mean_attribute)) +
+  geom_line(aes(color = Hot100)) +
+  geom_point(aes(color = Hot100)) +
+  labs(x = "Year",
+      y = "Mean Value of Speechiness")
+
+figure <- ggarrange(danceability, energy, valence, speechiness,
+                    labels = c("Danceabilty", "Energy", "Valence", "Speechiness"),
+                    ncol = 2, nrow = 2)
+
+figure
+
+```
+
+Here, these charts show two important features in the data. Firstly, for every attribute, there is generally a significant difference between the mean attribute of Hot 100 vs. non-Hot 100 songs for every year, seemingly confirming my prior intuition that Hot 100 songs (the most commerically successful/popular songs of the week for every week since 1960) tend to be characteristically different than their non-Hot 100 counterparts. Take danceability, where the averages for each year have been higher for Hot 100 songs for nearly every year since the mid-1960s.
+
+Secondly, the charts also show broadly how the different audio features have become more or less popular over time. Mean valence has decreased significantly since the 1960s, and is at its lowest point ever, seeming to correlate with the trend of "sadder" pop music songs in the 2010s. Alternatively, energy and danceability have steadily risen over time, possibly due to the rise of electronic music and sounds in pop music that have fundamentally changed the way modern pop songs sound as compared to several decades ago.
+
+\newpage
+
+**Figure 2: Modeling Peak Chart Position based on Audio Features, 2010s**
+
+```{r figure 2, message=FALSE, warning=FALSE}
+
+group_decade <- grouping2 %>% 
+            filter(decade == "2010")
+
+peak <- lm(`Peak Position` ~ Danceability + Energy + Speechiness + Valence, data = group_decade) %>%
+            coefplot.lm(color = "black", 
+                        pointSize = 1.8, 
+                        alpha = .7,
+                        xlab = "Effect on Peak Position",
+                        ylab = "Coefficient") +
+            labs(title = "Audio Features as Predictors of Peak Position - 2010s") +
+            theme(plot.title = element_text(hjust = 0.5))
+peak
+
+```
+
+The above coefficient plot is an example of one of six coefficient plots that visualizes the estimated effect of a one unit increase in a given feature in a song on that song's peak chart position. Analysis of the model for the 2010s yields some interesting results. The intercept is ~ +23, indicating where the model predicts a song with 0 of everything to be on the charts (this actually translates to #77, but the reverse coding complicates the analysis). The coefficient with the highest absolute value - 'Danceability' (~ +29) - indicates the most strongly positive correlation between an'Danceability' and peak chart position. It seems highly probable that songs which are better to dance to based on the 'Danceability' metric would tend to chart better. The coefficient with the lowest absolute value - 'Valence' (~ -1) - shows a weak negative correlation between valence and peak position, possibly suggesting that happy-sounding songs tend to do slightly worse than sad-sounding songs. The positive correlation between 'Speechiness' (~ +4) and peak position may suggest that songs with rapping tend to have a higher peak position. Finally, the negative correlation between 'Energy' and peak position (~ -5) seems to suggest that high energy songs tend to do worse than songs with a more mellow feel. Note that causality is not necessarily implied, and this is a simplistic model. All analysis does not presume causality and simply notes the interesting correlations found in the data.
